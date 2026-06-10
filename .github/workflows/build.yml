@@ -21,7 +21,7 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Install dependencies + Capacitor
@@ -38,17 +38,18 @@ jobs:
       - name: Add Android platform
         run: npx cap add android || true
 
-      - name: Fix Kotlin version conflict
+      - name: Force Gradle + Kotlin versions
         working-directory: android
         run: |
           echo "kotlin.version=1.9.22" >> gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2048m" >> gradle.properties
 
       - name: Sync Capacitor Android
         run: npx cap sync android
 
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace --info
 
       - name: Upload APK to GitHub
         uses: actions/upload-artifact@v4
