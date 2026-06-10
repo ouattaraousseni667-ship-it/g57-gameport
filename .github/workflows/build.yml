@@ -24,11 +24,19 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Install NPM dependencies
-        run: npm install
+      - name: Install dependencies + Capacitor
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build Vite project
         run: npm run build
+
+      - name: Init Capacitor if needed
+        run: npx cap init GameHub com.g57.gamehub --web-dir=dist || true
+
+      - name: Add Android platform
+        run: npx cap add android || true
 
       - name: Sync Capacitor Android
         run: npx cap sync android
