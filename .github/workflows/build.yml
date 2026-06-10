@@ -38,12 +38,17 @@ jobs:
       - name: Add Android platform
         run: npx cap add android || true
 
+      - name: Fix Kotlin version conflict
+        working-directory: android
+        run: |
+          echo "kotlin.version=1.9.22" >> gradle.properties
+
       - name: Sync Capacitor Android
         run: npx cap sync android
 
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK to GitHub
         uses: actions/upload-artifact@v4
