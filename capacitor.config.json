@@ -1,0 +1,6 @@
+{
+  "appId": "com.gamehub.app",
+  "appName": "GameHub",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
