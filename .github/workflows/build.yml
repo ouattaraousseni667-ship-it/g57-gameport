@@ -8,50 +8,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-        
-      - name: Setup Java 17
+      
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup Java 21 - FIX POUR TON ERREUR
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           
-      - name: Check Java Version
-        run: java -version
-        
       - uses: android-actions/setup-android@v3
-      - run: yes | sdkmanager --licenses
       - run: npm install
       - run: npm install @capacitor/core @capacitor/cli @capacitor/android
       - run: npm run build
-      - run: npx cap add android || true
+      - run: npx cap add android
       - run: npx cap sync android
         
-      - name: FORCE JAVA 17 PARTOUT + DEBUG
+      - name: Build APK
         working-directory: android
-        run: |
-          echo "========== VERSION JAVA ACTUELLE =========="
-          java -version
-          echo "========== CONTENU build.gradle =========="
-          cat app/build.gradle | grep -i "version"
-          echo "========== FORCE JAVA 17 =========="
-          echo "org.gradle.java.home=$JAVA_HOME_17_X64" >> gradle.properties
-          sed -i 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' app/build.gradle
-          sed -i 's/JavaVersion.VERSION_20/JavaVersion.VERSION_17/g' app/build.gradle
-          sed -i 's/sourceCompatibility 21/sourceCompatibility 17/g' app/build.gradle
-          sed -i 's/targetCompatibility 21/targetCompatibility 17/g' app/build.gradle
-          echo "========== APRES PATCH =========="
-          cat app/build.gradle | grep -i "version"
-          
-      - name: Build Debug APK
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --info
-          
+        run: chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+        
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: success()
         with:
           name: GameHub-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
