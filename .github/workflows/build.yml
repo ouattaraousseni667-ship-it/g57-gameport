@@ -7,13 +7,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with: 
-          node-version: '20'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
         
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -21,43 +17,41 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Check Java Version
+        run: java -version
         
-      - name: Accept Android licenses
-        run: yes | sdkmanager --licenses
+      - uses: android-actions/setup-android@v3
+      - run: yes | sdkmanager --licenses
+      - run: npm install
+      - run: npm install @capacitor/core @capacitor/cli @capacitor/android
+      - run: npm run build
+      - run: npx cap add android || true
+      - run: npx cap sync android
         
-      - name: Install NPM deps
-        run: npm install
-        
-      - name: Install Capacitor
-        run: npm install @capacitor/core @capacitor/cli @capacitor/android
-        
-      - name: Build Web App
-        run: npm run build
-        
-      - name: Add Android Platform
-        run: npx cap add android || true
-        
-      - name: Sync Capacitor
-        run: npx cap sync android
-        
-      - name: Fix Java Version
+      - name: FORCE JAVA 17 PARTOUT + DEBUG
         working-directory: android
         run: |
+          echo "========== VERSION JAVA ACTUELLE =========="
+          java -version
+          echo "========== CONTENU build.gradle =========="
+          cat app/build.gradle | grep -i "version"
+          echo "========== FORCE JAVA 17 =========="
           echo "org.gradle.java.home=$JAVA_HOME_17_X64" >> gradle.properties
-          sed -i 's/VERSION_21/VERSION_17/g' app/build.gradle || true
-          sed -i 's/VERSION_20/VERSION_17/g' app/build.gradle || true
+          sed -i 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' app/build.gradle
+          sed -i 's/JavaVersion.VERSION_20/JavaVersion.VERSION_17/g' app/build.gradle
+          sed -i 's/sourceCompatibility 21/sourceCompatibility 17/g' app/build.gradle
+          sed -i 's/targetCompatibility 21/targetCompatibility 17/g' app/build.gradle
+          echo "========== APRES PATCH =========="
+          cat app/build.gradle | grep -i "version"
           
       - name: Build Debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
-        
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        if: success()
+          ./gradlew assembleDebug --stacktrace --info
+          
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: GameHub-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
